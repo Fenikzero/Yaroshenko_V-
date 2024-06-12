@@ -1,0 +1,154 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+class TicTacToe {
+public:
+    TicTacToe();
+    void play();
+    void saveGame();
+    bool loadGame();
+
+private:
+    void displayBoard();
+    bool checkWin(char player);
+    bool checkDraw();
+    bool makeMove(char player, int row, int col);
+    vector<vector<char>> board;
+    int movesCount;
+};
+
+TicTacToe::TicTacToe() : board(3, vector<char>(3, ' ')), movesCount(0) {}
+
+void TicTacToe::displayBoard() {
+    cout << "Current board:\n";
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            cout << board[i][j];
+            if (j < 2) cout << " | ";
+        }
+        cout << "\n";
+        if (i < 2) cout << "---------\n";
+    }
+}
+
+bool TicTacToe::checkWin(char player) {
+    for (int i = 0; i < 3; ++i) {
+        if ((board[i][0] == player && board[i][1] == player && board[i][2] == player) ||
+            (board[0][i] == player && board[1][i] == player && board[2][i] == player)) {
+            return true;
+        }
+    }
+    if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
+        (board[0][2] == player && board[1][1] == player && board[2][0] == player)) {
+        return true;
+    }
+    return false;
+}
+
+bool TicTacToe::checkDraw() {
+    return movesCount == 9;
+}
+
+bool TicTacToe::makeMove(char player, int row, int col) {
+    if (row < 0 || row >= 3 || col < 0 || col >= 3 || board[row][col] != ' ') {
+        return false;
+    }
+    board[row][col] = player;
+    ++movesCount;
+    return true;
+}
+
+void TicTacToe::saveGame() {
+    ofstream outFile("savegame.txt");
+    if (outFile.is_open()) {
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                outFile << board[i][j];
+                if (j < 2) outFile << ",";
+            }
+            outFile << "\n";
+        }
+        outFile << movesCount << "\n";
+        outFile.close();
+        cout << "Game saved successfully.\n";
+    } else {
+        cerr << "Error saving the game.\n";
+    }
+}
+
+bool TicTacToe::loadGame() {
+    ifstream inFile("savegame.txt");
+    if (inFile.is_open()) {
+        string line;
+        int row = 0;
+        while (getline(inFile, line) && row < 3) {
+            int col = 0;
+            for (size_t i = 0; i < line.size() && col < 3; ++i) {
+                if (line[i] != ',') {
+                    board[row][col] = line[i];
+                    ++col;
+                }
+            }
+            ++row;
+        }
+        inFile >> movesCount;
+        inFile.close();
+        cout << "Game loaded successfully.\n";
+        return true;
+    } else {
+        cerr << "Error loading the game.\n";
+        return false;
+    }
+}
+
+void TicTacToe::play() {
+    char player = 'X';
+    bool loaded = false;
+    cout << "Do you want to load the previous game? (y/n): ";
+    char choice;
+    cin >> choice;
+    if (choice == 'y' || choice == 'Y') {
+        loaded = loadGame();
+    }
+
+    if (!loaded) {
+        board = vector<vector<char>>(3, vector<char>(3, ' '));
+        movesCount = 0;
+    }
+
+    while (true) {
+        displayBoard();
+        int row, col;
+        cout << "Player " << player << ", enter your move (row and column): ";
+        cin >> row >> col;
+        if (makeMove(player, row - 1, col - 1)) {
+            if (checkWin(player)) {
+                displayBoard();
+                cout << "Player " << player << " wins!\n";
+                break;
+            } else if (checkDraw()) {
+                displayBoard();
+                cout << "The game is a draw!\n";
+                break;
+            }
+            player = (player == 'X') ? 'O' : 'X';
+        } else {
+            cout << "Invalid move. Try again.\n";
+        }
+        cout << "Do you want to save the game? (y/n): ";
+        cin >> choice;
+        if (choice == 'y' || choice == 'Y') {
+            saveGame();
+        }
+    }
+}
+
+int main() {
+    TicTacToe game;
+    game.play();
+    return 0;
+}
