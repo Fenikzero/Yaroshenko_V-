@@ -1,0 +1,172 @@
+#include <iostream>
+#include <windows.h>
+#include <conio.h>
+using namespace std;
+
+int main() {
+    srand(time(0)); // initialize random number generator
+    system("title Snake Game");
+    system("mode con cols=70 lines=31"); // set console window size
+    MoveWindow(GetConsoleWindow(), 50, 50, 2000, 2000, true); // set initial position of console window
+
+    const int width = 50, height = 30; // field size
+    const int max_length = 50; // maximum snake length
+    int array_X[max_length]; // array storing snake segments' x-coordinates
+    int array_Y[max_length]; // array storing snake segments' y-coordinates
+    int length = 1; // snake length
+    array_X[0] = width / 2; // initial snake x-coordinate
+    array_Y[0] = height / 2; // initial snake y-coordinate
+    int dx = 1, dy = 0; // movement increments
+    int X_apple, Y_apple; // apple coordinates
+
+    do {
+        X_apple = rand() % (width - 2) + 1;
+        Y_apple = rand() % (height - 2) + 1;
+    } while (X_apple != array_X[length - 1] && Y_apple != array_Y[length - 1]);
+
+    int sleep_time = 100; // frame rate
+
+    char snake = '*'; // snake body character
+    char apple = 'o'; // apple character
+    char head = 1; // snake head character
+    COORD c; // coordinate object
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE); // console output handle
+    CONSOLE_CURSOR_INFO cci = { sizeof(cci), false }; // cursor info
+    SetConsoleCursorInfo(h, &cci); // set cursor info
+
+    SetConsoleTextAttribute(h, 4); // set border color
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            char s;
+            if (x == 0 && y == 0)
+                s = '#';
+            else if (x == 0 && y == height - 1)
+                s = '#';
+            else if (y == 0 && x == width - 1)
+                s = '#';
+            else if (y == height - 1 && x == width - 1)
+                s = '#';
+            else if (y == 0 || y == height - 1)
+                s = '#';
+            else if (x == 0 || x == width - 1)
+                s = '#';
+            else s = ' ';
+            cout << s;
+        }
+        cout << "\n";
+    }
+
+    c.X = X_apple;
+    c.Y = Y_apple;
+    SetConsoleCursorPosition(h, c); // position cursor at apple
+    SetConsoleTextAttribute(h, 12); // set apple color
+    cout << apple; // draw apple
+
+    c.X = array_X[0];
+    c.Y = array_Y[0];
+    SetConsoleCursorPosition(h, c); // position cursor at snake head
+    SetConsoleTextAttribute(h, 10); // set snake color
+    cout << head; // draw snake head
+
+    bool flag = true; // loop control variable
+    do {
+        Sleep(sleep_time); // delay
+
+        if (_kbhit()) { // check if a key is pressed
+            int k = _getch(); // read key code
+            if (k == 0 || k == 224) // handle special keys
+                k = _getch();
+            switch (k) {
+            case 80: // down
+                dy = 1;
+                dx = 0;
+                break;
+            case 72: // up
+                dy = -1;
+                dx = 0;
+                break;
+            case 75: // left
+                dy = 0;
+                dx = -1;
+                break;
+            case 77: // right
+                dy = 0;
+                dx = 1;
+                break;
+            case 27: // ESC
+                flag = false;
+                break;
+            }
+        }
+
+        int X = array_X[length - 1] + dx; // new snake head x-coordinate
+        int Y = array_Y[length - 1] + dy; // new snake head y-coordinate
+        if (X == 0 || X == width - 1 || Y == 0 || Y == height - 1) {
+            flag = false;
+        } else if (X == X_apple && Y == Y_apple) {
+            c.X = array_X[length - 1];
+            c.Y = array_Y[length - 1];
+            SetConsoleCursorPosition(h, c);
+            cout << snake; // draw snake body
+
+            length++;
+            c.X = array_X[length - 1] = X;
+            c.Y = array_Y[length - 1] = Y;
+            SetConsoleCursorPosition(h, c);
+            cout << head; // draw new snake head
+
+            if (length == max_length) {
+                break;
+            }
+
+            int i;
+            do {
+                X_apple = rand() % (width - 2) + 1;
+                Y_apple = rand() % (height - 2) + 1;
+                i = 0;
+                for (; i < length; i++)
+                    if (X_apple == array_X[i] && Y_apple == array_Y[i])
+                        break;
+            } while (i < length);
+
+            c.X = X_apple;
+            c.Y = Y_apple;
+            SetConsoleCursorPosition(h, c);
+            SetConsoleTextAttribute(h, 12);
+            cout << apple;
+            SetConsoleTextAttribute(h, 10);
+        } else {
+            int i = 1;
+            for (; i < length; i++)
+                if (X == array_X[i] && Y == array_Y[i])
+                    break;
+            if (i < length)
+                break;
+            else {
+                c.X = array_X[0];
+                c.Y = array_Y[0];
+                SetConsoleCursorPosition(h, c);
+                cout << ' '; // erase tail
+
+                if (length > 1) {
+                    c.X = array_X[length - 1];
+                    c.Y = array_Y[length - 1];
+                    SetConsoleCursorPosition(h, c);
+                    putchar(snake); // draw snake body
+                }
+
+                for (int i = 0; i < length - 1; i++) {
+                    array_X[i] = array_X[i + 1];
+                    array_Y[i] = array_Y[i + 1];
+                }
+
+                c.X = array_X[length - 1] = X;
+                c.Y = array_Y[length - 1] = Y;
+                SetConsoleCursorPosition(h, c);
+                cout << head; // draw new snake head
+            }
+        }
+    } while (flag);
+    system("cls"); // clear screen
+    cout << "GAME OVER\n"; 
+}
